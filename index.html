@@ -71,7 +71,7 @@ section.tab.active{display:block;animation:fade .18s ease}
 .stepper output{min-width:92px;text-align:center;font-weight:700;font-size:17px}
 .excl{display:flex;gap:8px}
 .excl input{flex:1;min-width:0;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:0 12px;font-size:16px}
-.excl button{height:44px;padding:0 16px;border-radius:12px;background:var(--surface2);font-weight:600}
+.excl button{height:44px;min-width:44px;padding:0 16px;border-radius:12px;background:var(--surface2);font-weight:600}
 .tagchip{display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 4px 0 12px;border-radius:999px;background:var(--accent-soft);font-size:14px;font-weight:550}
 .tagchip button{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:18px;color:var(--muted)}
 #exclList{margin-top:8px}
@@ -126,7 +126,7 @@ section.tab.active{display:block;animation:fade .18s ease}
 .ing td.c{text-align:right;white-space:nowrap;color:var(--muted);padding-left:10px;font-variant-numeric:tabular-nums}
 .ing tr.sum td{border-bottom:0;font-weight:700;color:var(--text);padding-top:10px}
 .ing tr.pp td{border-bottom:0;padding-top:0;color:var(--muted)}
-.hl td{font-size:14px}.hl td.c{padding-left:8px}
+.hl td{font-size:14px}.hl td.c{padding-left:8px;white-space:normal}
 .hl tr.hd td{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding-top:4px}
 .hl .pt{font-weight:700}.hl .p1{color:var(--ok)}.hl .p05{color:var(--warn)}.hl .p0{color:#c0392b}
 .badge{font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--surface2);color:var(--muted);margin-left:6px;vertical-align:1px}
@@ -143,7 +143,7 @@ ol.steps li::before{content:counter(s);position:absolute;left:0;top:-2px;width:3
 
 
 /* Swipe-Deck */
-.deck{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;
+.deck{display:flex;align-items:flex-start;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;
   margin:0 calc(-16px - var(--sr)) 0 calc(-16px - var(--sl));padding:4px calc(16px + var(--sr)) 12px calc(16px + var(--sl));scroll-padding-left:calc(16px + var(--sl))}
 .deck::-webkit-scrollbar{display:none}
 .dcard{flex:0 0 calc(100% - 30px);max-width:440px;scroll-snap-align:start;scroll-snap-stop:always;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;-webkit-user-select:none;user-select:none}
@@ -175,6 +175,7 @@ ol.steps li::before{content:counter(s);position:absolute;left:0;top:-2px;width:3
   .bg1.mf{stop-color:#4a3622}.bg2.mf{stop-color:#2e2217}.bg1.ms{stop-color:#33402a}.bg2.ms{stop-color:#1f2819}
   .bg1.mm{stop-color:#4a3024}.bg2.mm{stop-color:#2e1d16}.bg1.ma{stop-color:#30334a}.bg2.ma{stop-color:#1d1f2e}
 }
+@media (max-width:360px){.kpis{grid-template-columns:repeat(2,1fr)}.hl td{font-size:13px}.hl td.c{padding-left:5px}}
 /* Einkauf */
 .listhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .catttl{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:16px 4px 6px}
@@ -217,7 +218,7 @@ nav.tabbar svg{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width
 .sheet-open .toast{bottom:calc(var(--sb) + 86px)}
 .hint{display:flex;gap:12px;align-items:flex-start;background:var(--accent-soft);border-radius:var(--r);padding:12px 6px 12px 14px;margin-bottom:12px;font-size:14px}
 .hint .grow b{display:block;margin-bottom:2px}
-.hint .iconbtn{flex:none;width:36px;height:36px;background:transparent;font-size:18px}
+.hint .iconbtn{flex:none;width:44px;height:44px;background:transparent;font-size:18px}
 </style>
 </head>
 <body>
