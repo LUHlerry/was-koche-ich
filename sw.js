@@ -1,5 +1,5 @@
 // Bei jeder Änderung an den App-Dateien die Versionsnummer erhöhen.
-const CACHE = "wkc-v5";
+const CACHE = "wkc-v6";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.png"];
 
 self.addEventListener("install", e => {
