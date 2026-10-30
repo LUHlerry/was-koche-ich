@@ -141,6 +141,40 @@ ol.steps li::before{content:counter(s);position:absolute;left:0;top:-2px;width:3
 .actionbar.open{transform:none;visibility:visible}
 .actionbar .btn{flex:1;min-height:50px}
 
+
+/* Swipe-Deck */
+.deck{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;
+  margin:0 calc(-16px - var(--sr)) 0 calc(-16px - var(--sl));padding:4px calc(16px + var(--sr)) 12px calc(16px + var(--sl));scroll-padding-left:calc(16px + var(--sl))}
+.deck::-webkit-scrollbar{display:none}
+.dcard{flex:0 0 calc(100% - 30px);max-width:440px;scroll-snap-align:start;scroll-snap-stop:always;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;-webkit-user-select:none;user-select:none}
+.dcard:only-child{flex-basis:100%}
+.dcard:active{transform:scale(.99)}
+.dimg{position:relative;aspect-ratio:400/260;flex:none}
+.dimg svg,.hero svg,.fthumb svg{display:block;width:100%;height:100%}
+.dtags{position:absolute;left:10px;top:10px;display:flex;gap:5px;flex-wrap:wrap}
+.dtags .pill{background:rgba(255,255,255,.88);color:#3a3530}
+.dfav{position:absolute;right:10px;top:8px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.88);display:grid;place-items:center;color:#c8430b;font-size:17px}
+.dbody{padding:12px 14px 14px;display:flex;flex-direction:column;flex:1}
+.dbody h3{font-size:19px;line-height:1.25;margin:0 0 10px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 10px}
+.kpis div{background:var(--surface2);border-radius:10px;padding:7px 2px 6px;text-align:center;min-width:0}
+.kpis b{display:block;font-size:15px;font-weight:750;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kpis span{display:block;font-size:11px;color:var(--muted);white-space:nowrap}
+.deckctl{display:flex;align-items:center;gap:12px}
+.deckctl button{width:44px;height:44px;border-radius:50%;background:var(--surface2);font-size:24px;line-height:1;display:grid;place-items:center}
+.deckctl button:disabled{opacity:.35}
+.prog{flex:1;height:4px;border-radius:2px;background:var(--surface2);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);border-radius:2px;transition:width .2s}
+.hero{border-radius:18px;overflow:hidden;aspect-ratio:400/260;margin:2px 0 12px;box-shadow:var(--shadow)}
+.fcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:8px 12px 8px 8px}
+.fthumb{width:104px;height:68px;border-radius:12px;overflow:hidden;flex:none}
+.ftxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.ftxt b{font-size:16px;line-height:1.25}
+.ftxt span{font-size:13px;color:var(--muted)}
+@media (prefers-color-scheme:dark){
+  .bg1.mf{stop-color:#4a3622}.bg2.mf{stop-color:#2e2217}.bg1.ms{stop-color:#33402a}.bg2.ms{stop-color:#1f2819}
+  .bg1.mm{stop-color:#4a3024}.bg2.mm{stop-color:#2e1d16}.bg1.ma{stop-color:#30334a}.bg2.ma{stop-color:#1d1f2e}
+}
 /* Einkauf */
 .listhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .catttl{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:16px 4px 6px}
@@ -275,6 +309,280 @@ function healthOf(r, CAT, NUT, VEG) {
   return { crit, score: crit.reduce((s, c) => s + c.p, 0) };
 }
 
+
+// Gezeichnete Gerichte-Illustrationen (SVG, offline, ohne Fotos)
+const DISH = (() => {
+  const W = 400, H = 260;
+  function rngFor(id) { let h = 2166136261; for (const c of id) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } let a = h >>> 0;
+    return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const f = n => Math.round(n * 10) / 10;
+  const E = (cx, cy, rx, ry, fill, x = "") => `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(rx)}" ry="${f(ry)}" fill="${fill}" ${x}/>`;
+  const C = (cx, cy, r, fill, x = "") => `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" fill="${fill}" ${x}/>`;
+  const Rc = (x, y, w, h, rx, fill, ex = "") => `<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" rx="${f(rx)}" fill="${fill}" ${ex}/>`;
+  const P = (d, fill, x = "") => `<path d="${d}" fill="${fill}" ${x}/>`;
+  const G = (x, y, rot, s, inner) => `<g transform="translate(${f(x)} ${f(y)}) rotate(${f(rot)}) scale(${f(s)})">${inner}</g>`;
+  const pick = (rng, a) => a[Math.floor(rng() * a.length)];
+
+  /* ---------- Zutaten-Formen (um 0,0 gezeichnet) ---------- */
+  const slice = (r, out, inn, seed) => C(0, 0, r, out) + C(0, 0, r * 0.78, inn) + (seed ? [0, 72, 144, 216, 288].map(a => C(Math.cos(a / 57.3) * r * 0.42, Math.sin(a / 57.3) * r * 0.42, r * 0.09, seed)).join("") : "");
+  const stick = (w, h, fill, hi) => Rc(-w / 2, -h / 2, w, h, h / 2, fill) + (hi ? Rc(-w / 2 + 3, -h / 2 + 1.2, w - 6, h * 0.28, h * 0.14, hi) : "");
+  const cube = (s, fill, edge) => Rc(-s / 2, -s / 2, s, s, s * 0.22, fill, edge ? `stroke="${edge}" stroke-width="1"` : "") + Rc(-s / 2 + 2, -s / 2 + 2, s * 0.45, s * 0.22, 1.5, "rgba(255,255,255,.35)");
+  const leaf = (w, h, fill, rib) => P(`M${-w / 2} 0 Q0 ${-h} ${w / 2} 0 Q0 ${h} ${-w / 2} 0Z`, fill) + `<path d="M${-w / 2 + 2} 0 L${w / 2 - 2} 0" stroke="${rib}" stroke-width="1.2" fill="none"/>`;
+  const IT = {
+    banana: { n: 6, s: 1, d: () => slice(13, "#efd98a", "#fbf0c4", "#8a6a3a") },
+    apple: { n: 5, s: 1, d: () => P("M-16 4 Q0 -14 16 4 Q0 -2 -16 4Z", "#f6e8c2", 'stroke="#d8432f" stroke-width="2.5"') + C(0, -2, 1.5, "#6b4a2a") },
+    blueberry: { n: 12, s: 1, d: () => C(0, 0, 5, "#33407a") + C(-1.5, -1.5, 1.6, "#6f7fb8") },
+    berries: { n: 12, s: 1, d: r => pick(r, [C(0, 0, 5, "#33407a") + C(-1.5, -1.5, 1.6, "#6f7fb8"), C(0, 0, 6, "#c7344a") + C(-2, -1, 1, "#f28a9a") + C(2, 1, 1, "#f28a9a"), C(0, 0, 4.5, "#7a1f4a") + C(-1, -1, 1.3, "#b65a86")]) },
+    cherry: { n: 6, s: 1, d: () => C(0, 0, 9, "#e3402a") + C(0, 0, 6.5, "#f27a5c") + C(-2, 1, 1.1, "#f8d18a") + C(2, -1, 1.1, "#f8d18a") + C(0, 2.5, 1.1, "#f8d18a") },
+    tomato: { n: 5, s: 1, d: () => slice(14, "#d8402a", "#ee6a4c", "#f6c46a") },
+    tomatobits: { n: 8, s: 1, d: () => cube(7, "#e04a32") },
+    cucumber: { n: 5, s: 1, d: () => slice(12, "#5e9a35", "#d7ecaa", "#b9d68a") },
+    cucstick: { n: 5, s: 1, d: () => stick(34, 8, "#cfe6a0", "#ffffff") + Rc(-17, 2, 34, 2, 1, "#5e9a35") },
+    zucchini: { n: 6, s: 1, d: () => slice(11, "#4f7f2a", "#e7eebf", "#c8d89a") },
+    carrot: { n: 6, s: 1, d: () => slice(8, "#e9781c", "#f59a3c") },
+    carrotstrip: { n: 6, s: 1, d: () => stick(30, 4.5, "#ef8423", "#f8b16a") },
+    carrotcube: { n: 8, s: 1, d: () => cube(6, "#ef8423") },
+    pepper: { n: 5, s: 1, d: r => P("M-15 3 Q0 -9 15 3 L15 7 Q0 -4 -15 7Z", pick(r, ["#d63a2a", "#f2b52a", "#d63a2a"])) },
+    pepperbits: { n: 6, s: 1, d: r => cube(7, pick(r, ["#d63a2a", "#f2b52a"])) },
+    onion: { n: 4, s: 1, d: r => `<circle r="${8 + r() * 4}" fill="none" stroke="#9b4f8d" stroke-width="2.6"/><circle r="${4 + r() * 2}" fill="none" stroke="#c48abb" stroke-width="1.6"/>` },
+    spring: { n: 7, s: 1, d: () => `<circle r="4" fill="#e8f3d0" stroke="#5aa032" stroke-width="2.2"/>` },
+    spinach: { n: 6, s: 1, d: () => leaf(24, 14, "#2f6b2a", "#5c9a4a") },
+    rocket: { n: 8, s: 1, d: () => P("M-12 0 L-8 -4 L-5 -1 L-2 -6 L1 -2 L5 -6 L7 -1 L12 0 L7 2 L4 5 L1 2 L-3 6 L-5 2 L-9 4Z", "#4f8a2b") },
+    lettuce: { n: 3, s: 1, d: () => leaf(62, 38, "#a5cf63", "#d9eeb0") },
+    broccoli: { n: 4, s: 1, d: () => Rc(-3, 4, 6, 12, 3, "#9cc26a") + C(-7, 0, 7, "#3f7a2f") + C(6, 0, 7, "#3f7a2f") + C(0, -6, 8, "#4a8a35") + C(-3, -3, 2, "#2e5f22") + C(4, -6, 2, "#2e5f22") },
+    mushroom: { n: 5, s: 1, d: () => P("M-11 0 Q-11 -11 0 -11 Q11 -11 11 0 L4 0 L4 8 L-4 8 L-4 0Z", "#ead9bb", 'stroke="#a8875e" stroke-width="1.4"') },
+    peas: { n: 12, s: 1, d: () => C(0, 0, 4.5, "#76b843") + C(-1.4, -1.4, 1.4, "#b5e08a") },
+    corn: { n: 12, s: 1, d: () => Rc(-3, -3.5, 6, 7, 2.2, "#f5cd3a") },
+    beans: { n: 10, s: 1, d: () => E(0, 0, 8, 5, "#86282a") + E(-2, -1.5, 3, 1.2, "#b85a52") },
+    chickpea: { n: 12, s: 1, d: () => C(0, 0, 6.5, "#dcb478") + `<path d="M-2 -5 Q2 0 -1 5" stroke="#c39553" stroke-width="1.2" fill="none"/>` },
+    feta: { n: 6, s: 1, d: () => cube(12, "#fbfaf3", "#e2dccb") },
+    cheese: { n: 10, s: 1, d: () => stick(16, 3, "#f3c443") },
+    parm: { n: 12, s: 1, d: r => P(`M0 0 l${3 + r() * 3} 1 l-1 ${2 + r() * 2} l-${3 + r() * 2} 0Z`, "#f2e3a8") },
+    egg: { n: 2, s: 1, d: () => P("M-22 -4 Q-18 -20 0 -18 Q20 -19 22 -2 Q24 16 4 18 Q-16 20 -22 -4Z", "#fffdf5") + C(2, 0, 9, "#f4a81f") + C(-1, -3, 3, "#fbd27a") },
+    poached: { n: 2, s: 1, d: () => E(0, 0, 18, 14, "#fffaf0") + C(1, 1, 7, "#f4a81f") + C(-1, -1, 2.5, "#fbd27a") },
+    scramble: { n: 7, s: 1, d: r => P(`M-10 -2 Q-8 -${8 + r() * 3} 0 -7 Q9 -9 10 0 Q9 ${7 + r() * 3} 0 7 Q-9 8 -10 -2Z`, "#f6cf47") + E(-3, -3, 3, 1.6, "#fbe58f") },
+    tofu: { n: 8, s: 1, d: () => cube(15, "#efdfb8", "#d8b46c") },
+    tofuglaze: { n: 8, s: 1, d: () => cube(15, "#a95a22", "#7a3c12") },
+    tofuscramble: { n: 12, s: 1, d: r => P(`M-7 -1 Q-5 -${6 + r() * 2} 1 -5 Q7 -6 7 1 Q6 6 0 5 Q-6 6 -7 -1Z`, "#f0d27f") },
+    chicken: { n: 8, s: 1, d: () => Rc(-10, -7, 20, 14, 6, "#d9a058") + Rc(-6, -4, 12, 2, 1, "#a8692c") + Rc(-6, 1, 12, 2, 1, "#a8692c") },
+    mince: { n: 14, s: 1, d: r => P(`M-5 0 Q-4 -${4 + r() * 2} 1 -4 Q6 -3 5 1 Q4 5 -1 4 Q-5 4 -5 0Z`, pick(r, ["#7a4a2e", "#8a5636", "#6a3e26"])) },
+    salmoncube: { n: 7, s: 1, d: () => cube(15, "#f0845a") + `<path d="M-6 -7 L-2 7 M2 -7 L6 7" stroke="#fbd2bc" stroke-width="1.4"/>` },
+    salmon: { n: 2, s: 1, d: () => P("M-24 -8 Q0 -18 24 -6 Q22 6 0 10 Q-22 8 -24 -8Z", "#f28a5f") + `<path d="M-14 -10 Q-10 0 -14 7 M-4 -12 Q0 0 -4 9 M6 -11 Q10 0 6 8" stroke="#fbd2bc" stroke-width="1.6" fill="none"/>` },
+    shrimp: { n: 7, s: 1, d: () => `<path d="M-9 4 Q-12 -8 0 -9 Q11 -9 10 2" stroke="#f08a6c" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M-7 3 Q-9 -6 0 -7" stroke="#f8b9a2" stroke-width="2" fill="none"/>` + P("M10 2 L15 6 L8 7Z", "#e0603e") },
+    ham: { n: 3, s: 1, d: () => P("M-20 -6 Q-4 -16 18 -8 Q22 4 6 10 Q-14 14 -20 -6Z", "#f1a3a0", 'stroke="#f7c9c6" stroke-width="2"') },
+    bacon: { n: 12, s: 1, d: () => Rc(-5, -4, 10, 8, 2, "#c4483e") + Rc(-5, -1, 10, 2, 1, "#f5d6cc") },
+    tuna: { n: 9, s: 1, d: r => P(`M-8 0 Q-6 -${5 + r() * 3} 2 -5 Q8 -2 7 3 Q3 7 -3 5 Q-8 4 -8 0Z`, pick(r, ["#c9a37a", "#b98f66"])) },
+    herbs: { n: 12, s: 1, d: r => leaf(5 + r() * 3, 3, "#3e8a35", "#3e8a35") },
+    chili: { n: 7, s: 1, d: () => Rc(-2, -1, 4, 2, 1, "#d4352a") },
+    sesame: { n: 16, s: 1, d: () => E(0, 0, 1.8, 1, "#f6eed6") },
+    cinnamon: { n: 14, s: 1, d: () => C(0, 0, 1.2, "#8a5a32") },
+    almonds: { n: 6, s: 1, d: () => P("M0 -8 Q6 -2 0 8 Q-6 -2 0 -8Z", "#c6955f") + `<path d="M0 -5 L0 5" stroke="#a87642" stroke-width="1"/>` },
+    cashew: { n: 5, s: 1, d: () => `<path d="M-7 -3 Q0 8 7 -3" stroke="#ecd1a2" stroke-width="5.5" fill="none" stroke-linecap="round"/>` },
+    muesli: { n: 14, s: 1, d: r => pick(r, [E(0, 0, 4, 2.5, "#dcb880"), E(0, 0, 3.5, 2.2, "#c79a5e"), C(0, 0, 2.5, "#5a3524"), E(0, 0, 3, 2, "#e8cf9a")]) },
+    oatflakes: { n: 10, s: 1, d: () => E(0, 0, 4, 2.6, "#e2c48e") },
+    potato: { n: 10, s: 1, d: r => Rc(-9, -7, 18, 14, 6, "#e9b64f") + Rc(-9, -7, 18, 5, 4, r() > .5 ? "#c98a2e" : "#d99a3a") },
+    fries: { n: 14, s: 1, d: () => stick(30, 6, "#f2c55c", "#f9de96") },
+    sweetfries: { n: 14, s: 1, d: () => stick(30, 7, "#ee8634", "#f7b077") },
+    gnocchi: { n: 12, s: 1, d: () => E(0, 0, 8, 6, "#efd49a") + `<path d="M-5 -2 L5 -2 M-5 1 L5 1" stroke="#d7b46e" stroke-width="1"/>` },
+    halloumi: { n: 6, s: 1, d: () => Rc(-16, -6, 32, 12, 3, "#f0d79a") + `<path d="M-10 -6 L-6 6 M0 -6 L4 6 M8 -6 L12 6" stroke="#b8803e" stroke-width="2"/>` },
+    lemon: { n: 1, s: 1, d: () => P("M-14 5 Q0 -16 14 5Z", "#f6d443") + P("M-10 4 Q0 -10 10 4Z", "#fbe98a") },
+    lime: { n: 1, s: 1, d: () => P("M-12 5 Q0 -14 12 5Z", "#7fb52f") + P("M-9 4 Q0 -9 9 4Z", "#c9e58a") },
+    olive: { n: 6, s: 1, d: () => E(0, 0, 6, 4.5, "#3a3626") + E(-1.5, -1.5, 1.6, 1, "#7a7454") },
+    pesto: { n: 3, s: 1, d: () => P("M-8 -2 Q-6 -8 0 -7 Q8 -7 7 0 Q6 7 -1 6 Q-8 5 -8 -2Z", "#4c7a26") },
+    garlic: { n: 8, s: 1, d: () => E(0, 0, 4, 3, "#f6ecd2", 'stroke="#e1cfa3" stroke-width=".8"') },
+    cocoaball: { n: 7, s: 1, d: () => C(0, 0, 15, "#6b4128") + C(-5, -5, 4, "#8a5a3a") + C(4, 3, 1.2, "#4a2a18") + C(-3, 6, 1.2, "#4a2a18") },
+    popcorn: { n: 26, s: 1, d: r => C(-3, 0, 5, "#fff3d2") + C(3, -1, 5, "#fff8e4") + C(0, 3, 4.5, "#f6e2b0") + (r() > .6 ? C(1, 0, 1.5, "#e6b64a") : "") },
+    avocado: { n: 4, s: 1, d: () => P("M-20 4 Q0 -14 20 4 Q0 -4 -20 4Z", "#cfe08a", 'stroke="#4e7a1e" stroke-width="2.4"') },
+    honey: { n: 1, s: 1, d: () => `<path d="M-40 -6 Q-20 10 0 -4 Q20 -16 40 2" stroke="#e7a52a" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".9"/>` },
+    swirl: { n: 1, s: 1, d: () => `<path d="M-22 0 Q-20 -12 0 -12 Q20 -12 20 0 Q20 10 0 10 Q-12 10 -12 0 Q-12 -5 0 -5" stroke="#fdf8ee" stroke-width="4" fill="none" stroke-linecap="round"/>` },
+    dollop: { n: 1, s: 1, d: () => P("M-14 2 Q-14 -10 0 -11 Q14 -10 14 2 Q8 9 0 8 Q-8 9 -14 2Z", "#fbf6ea") + E(-4, -4, 4, 2, "#ffffff") },
+    guac: { n: 1, s: 1, d: () => P("M-14 2 Q-14 -10 0 -11 Q14 -10 14 2 Q8 9 0 8 Q-8 9 -14 2Z", "#8fb83f") + C(-3, -3, 1.5, "#d4352a") }
+  };
+
+  /* ---------- Gefäße ---------- */
+  const VESSEL = {
+    plate: () => ({ svg: E(200, 150, 168, 98, "rgba(60,35,10,.16)") + E(200, 140, 164, 96, "#fbf8f2", 'stroke="#e7dfd0" stroke-width="2"') + E(200, 140, 124, 70, "#f3ede2"), area: [200, 138, 112, 62] }),
+    bowl: (t) => ({ svg: E(200, 196, 150, 50, "rgba(60,35,10,.16)") + P("M52 128 Q60 236 200 238 Q340 236 348 128Z", t.bowl2) + E(200, 128, 148, 76, t.bowl) + E(200, 128, 132, 64, t.bowlIn), area: [200, 128, 120, 56] }),
+    pan: () => ({ svg: Rc(318, 128, 80, 18, 9, "#2a2522") + E(200, 150, 160, 98, "rgba(0,0,0,.18)") + E(200, 140, 154, 92, "#2f2b28") + E(200, 140, 140, 82, "#3f3a35"), area: [200, 138, 124, 68] }),
+    board: () => ({ svg: Rc(36, 52, 328, 186, 26, "rgba(60,35,10,.18)") + Rc(30, 40, 340, 182, 26, "#c9955b") + [70, 105, 150, 190].map(y => `<path d="M48 ${y} Q200 ${y - 10} 352 ${y + 4}" stroke="#b5814a" stroke-width="1.6" fill="none" opacity=".6"/>`).join("") + C(340, 66, 8, "#b5814a"), area: [200, 132, 140, 70] }),
+    glass: (t) => ({ svg: E(200, 238, 70, 12, "rgba(60,35,10,.16)") + Rc(132, 34, 136, 206, 28, "rgba(255,255,255,.55)", 'stroke="#d9d2c4" stroke-width="2.5"') + Rc(138, t.fillTop || 70, 124, 236 - (t.fillTop || 70) - 2, 22, t.base1) + Rc(138, 150, 124, 22, 0, t.base2 || t.base1) + Rc(148, 44, 16, 180, 8, "rgba(255,255,255,.35)"), area: [200, 80, 50, 14] }),
+    mug: () => ({ svg: E(190, 232, 92, 14, "rgba(60,35,10,.18)") + `<path d="M272 100 Q326 104 320 150 Q314 190 270 186" stroke="#c94a2a" stroke-width="16" fill="none"/>` + Rc(110, 70, 166, 162, 26, "#d8552f") + E(193, 74, 83, 18, "#b8401f") + E(193, 76, 74, 14, "#5e3622") + P("M124 76 Q130 34 193 32 Q256 34 262 76Z", "#6a3d24") + E(175, 46, 22, 8, "#83502f") + C(170, 56, 7, "#3e2214") + C(214, 60, 8, "#3e2214") + C(196, 44, 6, "#3e2214"), area: [193, 74, 60, 10] }),
+    casserole: () => ({ svg: Rc(40, 64, 320, 176, 30, "rgba(60,35,10,.18)") + Rc(30, 50, 340, 176, 30, "#e9e4da", 'stroke="#d3cbbb" stroke-width="2"') + Rc(18, 112, 22, 50, 10, "#d3cbbb") + Rc(360, 112, 22, 50, 10, "#d3cbbb") + Rc(52, 70, 296, 136, 18, "#d99a3a"), area: [200, 138, 136, 58] })
+  };
+
+  /* ---------- Basen (Füllung) ---------- */
+  function scatter(rng, n, area, fn, spread = 1) {
+    let s = ""; const [cx, cy, rx, ry] = area;
+    for (let i = 0; i < n; i++) { const a = rng() * 6.283, d = Math.sqrt(rng()) * spread; s += G(cx + Math.cos(a) * rx * d, cy + Math.sin(a) * ry * d, rng() * 360, 1, fn(rng)); }
+    return s;
+  }
+  function fillArea(area, fill, extra = "") { const [cx, cy, rx, ry] = area; return E(cx, cy, rx + 6, ry + 6, fill, extra); }
+  const BASE = {
+    oats: (A, r) => fillArea(A, "#e6cf9f") + scatter(r, 60, A, () => E(0, 0, 4, 2.5, "#d8b97c")),
+    yogurt: (A, r) => fillArea(A, "#f8f3e8") + `<path d="M${A[0] - 50} ${A[1] + 10} Q${A[0]} ${A[1] - 20} ${A[0] + 50} ${A[1] + 5}" stroke="#ece4d2" stroke-width="3" fill="none"/>`,
+    quark: (A, r) => fillArea(A, "#fbf7ee"),
+    chia: (A, r) => "",
+    tomato: (A, r) => fillArea(A, "#c63b26") + scatter(r, 14, A, rr => E(0, 0, 8 + rr() * 6, 4, "#d9573a"), .9),
+    curry: (A, r) => fillArea(A, "#e7a93a") + scatter(r, 12, A, rr => E(0, 0, 8 + rr() * 6, 4, "#f1c260"), .9),
+    curryred: (A, r) => fillArea(A, "#de7a2f") + scatter(r, 12, A, rr => E(0, 0, 8 + rr() * 6, 4, "#eb9a4f"), .9),
+    dal: (A, r) => fillArea(A, "#e1913b") + scatter(r, 30, A, () => C(0, 0, 2.5, "#c9762a"), .95),
+    chili: (A, r) => fillArea(A, "#8f2e1e") + scatter(r, 12, A, rr => E(0, 0, 8 + rr() * 6, 4, "#a8412a"), .9),
+    souporange: (A, r) => fillArea(A, "#ec9a3a") + scatter(r, 8, A, rr => E(0, 0, 10, 4, "#f4b45e"), .85),
+    souptomato: (A, r) => fillArea(A, "#d4482c") + scatter(r, 8, A, rr => E(0, 0, 10, 4, "#e2684a"), .85),
+    cream: (A, r) => fillArea(A, "#f4e9cf"),
+    oil: (A, r) => fillArea(A, "#e8bd5f", 'opacity=".75"'),
+    dipbeige: (A, r) => "",
+    pasta: (A, r, red) => { const [cx, cy, rx, ry] = A; let s = E(cx, cy, rx * .95, ry * .95, "#e9bf5a"); for (let i = 0; i < 26; i++) { const y = cy - ry * .8 + rng2(r) * ry * 1.6, w = rx * (.4 + r() * .5), x = cx - w / 2 + (r() - .5) * rx * .5; const d = `M${f(x)} ${f(y)} q${f(w / 4)} -8 ${f(w / 2)} 0 t${f(w / 2)} 0`; s += `<path d="${d}" stroke="#d29b38" stroke-width="6" fill="none" stroke-linecap="round"/><path d="${d}" stroke="#f8dc8a" stroke-width="3.6" fill="none" stroke-linecap="round"/>`; } return s + `<path d="M${cx - 60} ${cy - 10} q30 -14 60 0" stroke="#fbe3a2" stroke-width="2" fill="none"/>`; },
+    pastared: (A, r) => BASE.pasta(A, r) + P(`M${A[0] - 62} ${A[1]} Q${A[0] - 60} ${A[1] - 40} ${A[0] - 5} ${A[1] - 36} Q${A[0] + 64} ${A[1] - 38} ${A[0] + 62} ${A[1] + 2} Q${A[0] + 58} ${A[1] + 38} ${A[0]} ${A[1] + 34} Q${A[0] - 64} ${A[1] + 36} ${A[0] - 62} ${A[1]}Z`, "#c3361f") + scatter(r, 10, [A[0], A[1], A[2] * .42, A[3] * .5], rr => E(0, 0, 7 + rr() * 5, 3.5, "#d9573a")),
+    rice: (A, r) => fillArea(A, "#f4efe3") + scatter(r, 110, A, () => E(0, 0, 3, 1.4, "#fffdf6"), 1),
+    friedrice: (A, r) => fillArea(A, "#e9d3a0") + scatter(r, 110, A, rr => E(0, 0, 3, 1.4, rr() > .5 ? "#f6e8c4" : "#d7b77a"), 1),
+    couscous: (A, r) => fillArea(A, "#e8c987") + scatter(r, 120, A, () => C(0, 0, 1.4, "#d9b366"), 1),
+    nachos: (A, r) => scatter(r, 18, A, rr => P("M-14 8 L0 -14 L14 8Z", rr() > .5 ? "#e8b64a" : "#efc663", 'stroke="#d29a32" stroke-width="1"'), .85),
+    popcorn: (A, r) => fillArea(A, "#f8e9c4"),
+    none: () => ""
+  };
+  function rng2(r) { return r(); }
+
+  /* ---------- Hauptelemente (große Formen) ---------- */
+  function bread(n, dark, spread) { let s = ""; const xs = n === 2 ? [135, 265] : [100, 200, 300], sc = n === 2 ? 1.35 : 1.05;
+    xs.forEach((x, i) => { s += G(x, 132 + (i % 2) * 6, (i - 1) * 5, sc, Rc(-48, -44, 96, 88, 24, dark ? "#8a5a32" : "#d9a560") + Rc(-41, -37, 82, 74, 18, dark ? "#b78657" : "#f1d29a") + (spread ? Rc(-36, -32, 72, 64, 16, spread) : "")); });
+    return { svg: s, areas: xs.map((x, i) => [x, 132 + (i % 2) * 6, 34 * sc, 30 * sc]) }; }
+  const MAIN = {
+    bread2: () => bread(2, true), bread3: () => bread(3, true), breadpb: () => bread(2, true, "#b97a3e"), breadavo: () => bread(2, true, "#a9c85a"),
+    bagel: () => ({ svg: [140, 262].map(x => C(x, 132, 56, "#c9873e") + C(x, 132, 48, "#f6efe1") + C(x, 132, 15, "#c9955b") + C(x, 132, 12, "#b5814a")).join(""), areas: [[140, 132, 30, 30], [262, 132, 30, 30]] }),
+    wrap: (fill) => ({ svg: [[135, 128, -14], [270, 138, 12]].map(([x, y, a]) => G(x, y, a, 1.4, Rc(-40, -26, 92, 52, 26, "#ecd3a0", 'stroke="#d8b679" stroke-width="2"') + E(-40, 0, 20, 26, "#f4e3bd") + E(-40, 0, 15, 20, fill[0]) + C(-44, -6, 5, fill[1]) + C(-36, 6, 5, fill[2]) + C(-42, 9, 3.5, fill[1]) + C(-35, -8, 3.5, fill[2]))).join(""), areas: [] }),
+    pancakes: () => ({ svg: [0, 1, 2, 3].map(i => E(200, 160 - i * 14, 96, 42, i % 2 ? "#d9963e" : "#e6aa4f") + E(200, 154 - i * 14, 92, 38, "#efc06a")).join("") + `<path d="M140 108 Q170 130 200 112 Q230 96 262 116 L262 150 Q255 160 250 148" stroke="#c46c1c" stroke-width="5" fill="none" opacity=".8"/>`, areas: [[200, 112, 60, 22]] }),
+    frenchtoast: () => ({ svg: [[150, 135, -8], [250, 140, 10]].map(([x, y, a]) => G(x, y, a, 1, Rc(-50, -46, 100, 92, 22, "#b86c2a") + Rc(-42, -38, 84, 76, 16, "#e3a24a") + E(-10, -8, 20, 10, "#f0c06a"))).join(""), areas: [[150, 135, 34, 30], [250, 140, 34, 30]] }),
+    omelette: () => ({ svg: P("M90 150 Q90 74 200 70 Q310 74 310 150Z", "#f2c443") + P("M90 150 Q200 168 310 150", "none", 'stroke="#e0a82c" stroke-width="4"') + E(150, 110, 16, 6, "#f8da7a"), areas: [[200, 118, 80, 26]] }),
+    flammkuchen: () => ({ svg: Rc(60, 70, 280, 132, 18, "#d9a560") + Rc(70, 80, 260, 112, 12, "#f6efdf") + [90, 140, 200, 250, 300].map(x => C(x, 80, 6, "#a06a2e")).join(""), areas: [[200, 136, 118, 46]] }),
+    burger: () => ({ svg: E(160, 210, 80, 14, "rgba(60,35,10,.18)") + P("M90 170 Q160 196 230 170 L230 182 Q160 206 90 182Z", "#d39a4a") + Rc(84, 146, 152, 22, 10, "#5a3220") + P("M80 146 L240 146 L232 140 Q160 128 88 140Z", "#f3c443") + P("M86 140 Q100 128 120 138 Q140 126 160 138 Q180 126 200 138 Q220 128 236 140Z", "#7cb342") + Rc(96, 128, 128, 10, 4, "#e2452e") + P("M88 130 Q90 64 160 62 Q230 64 232 130Z", "#e09a3e") + [120, 150, 175, 200, 140, 190].map((x, i) => E(x, 82 + (i % 3) * 12, 3, 1.6, "#f8eed6")).join("") + scatterFries(), areas: [] }),
+    crepes: () => ({ svg: [110, 160, 210].map((y, i) => G(200, y - 30, -6 + i * 4, 1, Rc(-110, -18, 220, 36, 18, "#e8b25a") + Rc(-110, -18, 220, 12, 8, "#f2c97a") + E(-110, 0, 10, 18, "#2f6b2a") + E(-110, 0, 6, 12, "#f3c443"))).join(""), areas: [] }),
+    mugcake: () => ({ svg: "", areas: [] }),
+    lasagne: () => ({ svg: Rc(52, 70, 296, 136, 18, "#e2a54a") + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => C(80 + i * 25 + (i % 2) * 6, 100 + (i % 3) * 36, 13, i % 2 ? "#c9502a" : "#b8401f", 'opacity=".75"')).join("") + [0, 1, 2, 3, 4, 5].map(i => E(95 + i * 42, 90 + (i % 2) * 70, 14, 7, "#f6e2a4")).join(""), areas: [[200, 138, 130, 54]] }),
+    gratin: () => ({ svg: [0, 1, 2, 3, 4, 5, 6, 7].map(i => E(80 + i * 34, 96 + (i % 3) * 38, 16, 9, "#b4692a", 'opacity=".6"')).join(""), areas: [[200, 138, 130, 54]] }),
+    skewer: () => ({ svg: [[200, 110], [200, 168]].map(([x, y]) => `<path d="M70 ${y} L330 ${y}" stroke="#c9955b" stroke-width="3.5"/>` + [100, 145, 190, 235, 280].map((cx, i) => G(cx, y, 0, 1, [Rc(-15, -13, 30, 26, 4, "#f4ead0") + `<path d="M-8 -13 L-4 13 M4 -13 L8 13" stroke="#b8803e" stroke-width="2.4"/>`, Rc(-14, -12, 28, 24, 6, "#d63a2a"), slice(13, "#4f7f2a", "#e7eebf"), Rc(-14, -12, 28, 24, 6, "#9b4f8d") + Rc(-10, -8, 20, 16, 4, "#c48abb")][i % 4])).join("")).join(""), areas: [] }),
+    ricemound: (A) => ({ svg: "", areas: [] }),
+    fetablock: () => ({ svg: Rc(165, 105, 70, 46, 6, "#fbfaf3", 'stroke="#e2dccb" stroke-width="1.5"') + scatter(rngFor("fb"), 10, [200, 128, 30, 18], () => C(0, 0, 1.3, "#5a7a3a")), areas: [] }),
+    burrata: () => ({ svg: C(200, 134, 40, "#fffdf6") + C(200, 134, 40, "none", 'stroke="#eee6d3" stroke-width="3"') + P("M182 132 Q200 112 218 132 Q210 150 200 148 Q190 150 182 132Z", "#fbf3df") + `<path d="M190 116 Q200 110 210 118" stroke="#e6dcc4" stroke-width="2" fill="none"/>`, areas: [] }),
+    salmonfillet: () => ({ svg: G(165, 120, -6, 1, P("M-50 -18 Q0 -36 52 -14 Q50 16 0 22 Q-48 18 -50 -18Z", "#ef8158") + `<path d="M-30 -24 Q-22 0 -30 18 M-10 -28 Q-2 0 -10 22 M12 -26 Q20 0 12 20 M32 -18 Q38 0 32 16" stroke="#fbd2bc" stroke-width="2.4" fill="none"/>` + P("M-50 -18 Q0 -36 52 -14 L50 -8 Q0 -28 -50 -12Z", "#d0603a")), areas: [] }),
+    knaecke: () => ({ svg: [[150, 140, -10], [250, 132, 8]].map(([x, y, a]) => G(x, y, a, 1, Rc(-36, -48, 72, 96, 6, "#c78e4e") + [-36, -18, 0, 18, 36].map(yy => [-24, -8, 8, 24].map(xx => C(xx, yy, 1.8, "#a06a2e")).join("")).join(""))).join(""), areas: [] }),
+    ricecakes: () => ({ svg: [[120, 136], [200, 128], [280, 136]].map(([x, y]) => C(x, y, 40, "#efe2c2") + C(x, y, 33, "#a9c85a") + scatter(rngFor("rc" + x), 14, [x, y, 34, 34], () => C(0, 0, 1.5, "#e7d9b5"), .3)).join(""), areas: [[120, 136, 22, 22], [200, 128, 22, 22], [280, 136, 22, 22]] }),
+    dipbeige: () => ({ svg: C(200, 136, 44, "#fbf8f2", 'stroke="#e7dfd0" stroke-width="2"') + C(200, 136, 36, "#e2c58f") + `<path d="M178 134 Q200 116 222 136 Q200 152 186 138" stroke="#cfa868" stroke-width="2.5" fill="none"/>` + C(200, 136, 4, "#c9502a") + C(208, 130, 3, "#5a8a2a"), areas: [] }),
+    dippb: () => ({ svg: C(200, 136, 34, "#fbf8f2", 'stroke="#e7dfd0" stroke-width="2"') + C(200, 136, 27, "#b97a3e") + `<path d="M186 134 Q200 122 214 136" stroke="#d29a5a" stroke-width="3" fill="none"/>`, areas: [] }),
+    dipwhite: () => ({ svg: C(200, 136, 36, "#fbf8f2", 'stroke="#e7dfd0" stroke-width="2"') + C(200, 136, 29, "#fbf6ea") + scatter(rngFor("dw"), 14, [200, 136, 22, 22], () => leaf(5, 3, "#3e8a35", "#3e8a35")), areas: [] }),
+    dipside: () => ({ svg: C(310, 190, 30, "#fbf8f2", 'stroke="#e7dfd0" stroke-width="2"') + C(310, 190, 23, "#fbf6ea") + scatter(rngFor("ds"), 8, [310, 190, 16, 16], () => leaf(4, 2.5, "#3e8a35", "#3e8a35")), areas: [] }),
+    lettucecups: () => ({ svg: [[130, 132, -16], [270, 132, 16]].map(([x, y, a]) => G(x, y, a, 1, leaf(118, 74, "#a5cf63", "#d9eeb0"))).join(""), areas: [[130, 132, 40, 22], [270, 132, 40, 22]] })
+  };
+  function scatterFries() { const r = rngFor("fries"); let s = ""; for (let i = 0; i < 14; i++) s += G(290 + (r() - .5) * 70, 150 + (r() - .5) * 70, r() * 360, 1, stick(34, 7, "#f2c55c", "#f9de96")); return s; }
+
+  /* ---------- Rezept-Zuordnung: [Gefäß, Basis, [Haupt…], [[Zutat, Anzahl]…], Farbthema] ---------- */
+  const SPEC = {
+    f01: ["glass", "", [], [["banana", 5], ["blueberry", 5], ["cinnamon", 10]], { base1: "#e6cf9f", base2: "#f6efdf", fillTop: 72 }],
+    f02: ["bowl", "oats", [], [["apple", 5], ["almonds", 6], ["cinnamon", 14], ["honey", 1]]],
+    f03: ["board", "", ["bread2"], [["scramble", 8], ["spring", 8], ["herbs", 6]]],
+    f04: ["plate", "", ["pancakes"], [["banana", 5], ["blueberry", 6]]],
+    f05: ["bowl", "quark", [], [["berries", 16], ["oatflakes", 10], ["honey", 1]]],
+    f06: ["bowl", "yogurt", [], [["muesli", 26], ["apple", 4], ["honey", 1]]],
+    f07: ["board", "", ["breadpb"], [["banana", 8], ["cinnamon", 10]]],
+    f08: ["glass", "", [], [["berries", 7], ["almonds", 3]], { base1: "#d9d2c0", base2: "#bfb7a6", fillTop: 76, chia: 1 }],
+    f09: ["board", "", ["breadavo"], [["poached", 2], ["cherry", 4], ["feta", 5], ["chili", 6]]],
+    f10: ["board", "", ["bagel"], [["salmon", 2], ["cucumber", 2], ["onion", 2]]],
+    f11: ["pan", "tomato", [], [["egg", 3], ["pepper", 4], ["feta", 7], ["herbs", 14]]],
+    f12: ["bowl", "yogurt", [], [["blueberry", 22], ["almonds", 7], ["muesli", 10], ["honey", 1]]],
+    f13: ["plate", "", ["frenchtoast"], [["blueberry", 9], ["honey", 1]]],
+    f14: ["plate", "", ["omelette"], [["mushroom", 3], ["ham", 2], ["spring", 6]]],
+    f15: ["pan", "", [], [["tofuscramble", 16], ["spinach", 6], ["cherry", 5], ["avocado", 2], ["spring", 6]]],
+    s01: ["plate", "", ["dipbeige"], [["carrotstrip", 0], ["cucstick", 0], ["pepper", 0]], { ring: [["carrotstrip", 5], ["cucstick", 5], ["pepper", 5]] }],
+    s02: ["plate", "", ["dippb"], [], { ring: [["apple", 8]] }],
+    s03: ["bowl", "popcorn", [], [["popcorn", 34]]],
+    s04: ["bowl", "", [], [["chickpea", 34], ["chili", 10]], { bowl: "#5b6b7a", bowl2: "#4a5866", bowlIn: "#d4ab6c" }],
+    s05: ["plate", "", ["knaecke", "dipside"], [], {}],
+    s06: ["plate", "", [], [["cocoaball", 7]]],
+    s07: ["board", "", ["dipside"], [["sweetfries", 18]]],
+    s08: ["mug", "", [], [], {}],
+    s09: ["plate", "", ["burrata"], [], { ring: [["cherry", 9], ["rocket", 8], ["pesto", 3]] }],
+    s10: ["board", "", ["wrap:#f39a70:#4f8a2b:#fbf6ea"], [["rocket", 6]]],
+    s11: ["plate", "", ["dipside"], [["halloumi", 6], ["cherry", 4], ["cucumber", 3], ["honey", 1]]],
+    s12: ["plate", "nachos", [], [["cheese", 16], ["beans", 6], ["tomatobits", 6], ["guac", 1], ["dollop", 1], ["spring", 6]]],
+    s13: ["board", "", ["ricecakes"], [["tuna", 9], ["cherry", 4], ["chili", 6]]],
+    s14: ["pan", "oil", [], [["shrimp", 10], ["garlic", 10], ["herbs", 12], ["chili", 8], ["lemon", 1]]],
+    s15: ["plate", "", ["lettucecups"], [["chicken", 6], ["carrotstrip", 6], ["pepperbits", 5], ["cashew", 4], ["spring", 5]]],
+    m01: ["plate", "pasta", [], [["garlic", 8], ["herbs", 14], ["chili", 8], ["parm", 12]]],
+    m02: ["bowl", "dal", [], [["swirl", 1], ["herbs", 10], ["chili", 4]]],
+    m03: ["pan", "", [], [["potato", 16], ["egg", 2], ["onion", 3], ["herbs", 10]]],
+    m04: ["bowl", "couscous", [], [["cucstick", 0], ["tomatobits", 8], ["pepperbits", 7], ["feta", 7], ["herbs", 10], ["carrotcube", 0], ["peas", 0]]],
+    m05: ["plate", "pastared", [], [["zucchini", 6], ["parm", 12], ["herbs", 6]]],
+    m06: ["board", "", ["wrap:#86282a:#f5cd3a:#a5cf63"], [["corn", 6], ["beans", 4]]],
+    m07: ["bowl", "souporange", [], [["swirl", 1], ["herbs", 14]]],
+    m08: ["pan", "cream", [], [["gnocchi", 16], ["spinach", 6], ["cherry", 5], ["parm", 10]]],
+    m09: ["bowl", "rice", [], [["chicken", 7], ["broccoli", 4], ["carrot", 6], ["spring", 6], ["sesame", 16]]],
+    m10: ["bowl", "chili", [], [["mince", 16], ["beans", 8], ["corn", 10], ["dollop", 1], ["herbs", 5]]],
+    m11: ["bowl", "rice", [], [["salmoncube", 7], ["avocado", 3], ["cucumber", 3], ["carrotstrip", 5], ["sesame", 16], ["spring", 5]]],
+    m12: ["bowl", "", ["fetablock"], [["cucumber", 5], ["tomato", 5], ["pepper", 4], ["onion", 3], ["olive", 7]], { bowlIn: "#cfe6a0" }],
+    m13: ["bowl", "curry", [], [["tofu", 8], ["broccoli", 3], ["carrot", 5], ["peas", 8], ["herbs", 8]]],
+    m14: ["plate", "pastared", [], [["cherry", 8], ["feta", 7], ["spinach", 4], ["herbs", 6]]],
+    m15: ["board", "", ["wrap:#d9a058:#a5cf63:#e3402a"], [["cherry", 4]]],
+    a01: ["plate", "", ["dipside"], [["potato", 10], ["pepper", 5], ["zucchini", 5], ["onion", 3], ["herbs", 10]]],
+    a02: ["pan", "friedrice", [], [["peas", 14], ["carrotcube", 12], ["scramble", 5], ["spring", 8]]],
+    a03: ["plate", "pastared", [], [["mince", 16], ["parm", 14], ["herbs", 4]]],
+    a04: ["bowl", "curryred", [], [["chickpea", 12], ["spinach", 6], ["herbs", 8]]],
+    a05: ["board", "", ["flammkuchen"], [["onion", 7], ["bacon", 16], ["herbs", 4]]],
+    a06: ["plate", "", ["crepes"], [["herbs", 4]]],
+    a07: ["casserole", "", ["gratin"], [["broccoli", 6], ["cheese", 14]]],
+    a08: ["bowl", "souptomato", [], [["swirl", 1], ["herbs", 10], ["parm", 0]]],
+    a09: ["plate", "", ["salmonfillet", "dipside"], [["potato", 0], ["broccoli", 0], ["lemon", 0]], { ring2: [["potato", 6], ["broccoli", 4], ["lemon", 1]] }],
+    a10: ["bowl", "curry", [], [["chicken", 9], ["pepper", 5], ["herbs", 8]]],
+    a11: ["board", "", ["burger"], []],
+    a12: ["casserole", "", ["lasagne"], [["herbs", 6]]],
+    a13: ["plate", "pasta", [], [["shrimp", 7], ["cherry", 5], ["herbs", 12], ["lemon", 1]]],
+    a14: ["plate", "couscous", ["skewer"], [], {}],
+    a15: ["bowl", "rice", [], [["tofuglaze", 8], ["broccoli", 4], ["sesame", 16], ["spring", 6], ["cashew", 3]]],
+    a16: ["board", "", ["bread3"], [["ham", 3], ["cucumber", 4], ["tomato", 2], ["herbs", 6]]],
+    a17: ["bowl", "", [], [["rocket", 10], ["beans", 12], ["tuna", 9], ["cherry", 6], ["onion", 3]], { bowlIn: "#cfe6a0" }]
+  };
+  const BG = { f: ["#fbe9cf", "#f6d6b0"], s: ["#e9f0d9", "#d5e3bc"], m: ["#f9e2d3", "#f1c9b0"], a: ["#e3e4f2", "#c9cbe6"] };
+  const BGD = { f: ["#3a2c1d", "#2a2016"], s: ["#26301f", "#1c2417"], m: ["#3a261c", "#2a1b14"], a: ["#262838", "#1b1c2a"] };
+
+  const TS = { honey: 1.3, swirl: 1.3, egg: 1.15, poached: 1.15, popcorn: 1.15, cocoaball: 1.2, lettuce: 1, salmon: 1.2, sesame: 1.5, herbs: 1.4, rice: 1 };
+  const cache = new Map();
+  function svg(r) {
+    if (cache.has(r.id)) return cache.get(r.id);
+    const sp = SPEC[r.id] || ["plate", "", [], [["herbs", 8]]];
+    const [vk, bk, mains, tops, th0] = sp; const th = Object.assign({ bowl: "#f4efe6", bowl2: "#e4dccd", bowlIn: "#ece5d8" }, th0 || {});
+    const rng = rngFor(r.id); const V = VESSEL[vk](th); let areas = [V.area]; let body = "";
+    if (bk && BASE[bk]) body += BASE[bk](V.area, rng);
+    if (th.chia) body += "";
+    let mainAreas = [];
+    let over = "";
+    for (const m of mains) { const [k, ...args] = m.split(":"); const M = MAIN[k](args); if (k === "fetablock" || k === "dipside") over += M.svg; else body += M.svg; mainAreas = mainAreas.concat(M.areas); }
+    if (mainAreas.length) areas = mainAreas;
+    // Ring um einen Dip / Mittelstück
+    const ringItems = (th.ring || th.ring2 || []);
+    if (ringItems.length) { const [cx, cy, rx, ry] = V.area; let all = []; ringItems.forEach(([k, n]) => { for (let i = 0; i < n; i++) all.push(k); });
+      all.forEach((k, i) => { const a = i / all.length * 6.283 + rng() * .2, rr = th.ring2 ? .78 : .74; body += G(cx + Math.cos(a) * rx * rr + (th.ring2 ? 40 : 0), cy + Math.sin(a) * ry * rr, a * 57.3 + 90, 1.3, IT[k].d(rng)); }); }
+    // Belag verteilen
+    const pts = [];
+    for (const [k, n0] of tops) {
+      const it = IT[k]; if (!it || !n0) continue;
+      for (let i = 0; i < n0; i++) {
+        if (!areas.length) break;
+        const A = areas[Math.floor(rng() * areas.length)]; let best = null, bd = -1;
+        for (let t = 0; t < 8; t++) { const a = rng() * 6.283, d = Math.sqrt(rng()) * .92, x = A[0] + Math.cos(a) * A[2] * d, y = A[1] + Math.sin(a) * A[3] * d;
+          const md = pts.reduce((m, p) => Math.min(m, Math.hypot(p[0] - x, p[1] - y)), 999); if (md > bd) { bd = md; best = [x, y]; } }
+        pts.push(best);
+        const rot = ["honey", "swirl", "lemon", "lime", "egg", "poached", "dollop", "guac", "salmon"].includes(k) ? (rng() - .5) * 30 : rng() * 360;
+        body += G(best[0], best[1], rot, TS[k] || 1.35, it.d(rng));
+      }
+    }
+    if (th.chia) body = scatter(rng, 160, [200, 190, 58, 40], () => C(0, 0, 1.3, "#4a443a"), 1) + body;
+    const id = "g" + r.id;
+    const s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration: ${r.n.replace(/"/g, "")}" preserveAspectRatio="xMidYMid slice">
+      <defs><radialGradient id="${id}" cx="50%" cy="40%" r="75%"><stop offset="0" class="bg1 m${r.m}" stop-color="${BG[r.m][0]}"/><stop offset="1" class="bg2 m${r.m}" stop-color="${BG[r.m][1]}"/></radialGradient></defs>
+      <rect width="${W}" height="${H}" fill="url(#${id})"/>${V.svg}${body}${over}</svg>`;
+    cache.set(r.id, s); return s;
+  }
+  return { svg, BGD, BG, SPEC };
+})();
 
 const CATNAME = Object.fromEntries(CATS);
 const CATORDER = Object.fromEntries(CATS.map((c, i) => [c[0], i]));
@@ -442,54 +750,75 @@ function updateCount() {
   const n = R.filter(matches).length;
   $("#matchCount").textContent = n === 1 ? "· 1 Gericht" : `· ${n} Gerichte`;
 }
-function filterChanged() { save(); queue = []; renderFilters(); if (shown.length) { shown = []; $("#results").innerHTML = ""; } }
+function filterChanged() { save(); renderFilters(); if (shown.length) { shown = []; $("#results").innerHTML = ""; } }
 
-/* ---------- Vorschläge ---------- */
-let queue = [], shown = [];
+/* ---------- Vorschläge (Swipe-Deck) ---------- */
+let shown = [], deckIdx = 0;
 function ordered(list) {
   const rec = recentSet();
   return shuffle(list.filter(r => !rec.has(r.id))).concat(
     list.filter(r => rec.has(r.id)).sort((a, b) => lastCooked(a.id) - lastCooked(b.id)));
 }
-function next3() {
-  const ms = R.filter(matches);
-  if (ms.length <= 3) { shown = ordered(ms).map(r => r.id); return ms.length; }
-  if (queue.length < 3) {
-    const have = new Set(queue.map(r => r.id).concat(shown));
-    queue = queue.concat(ordered(ms.filter(r => !have.has(r.id))));
-  }
-  const pick = queue.splice(0, 3).map(r => r.id);
-  for (const r of ordered(ms)) { if (pick.length >= 3) break; if (!pick.includes(r.id)) pick.push(r.id); }
-  shown = pick;
-  return ms.length;
-}
+function buildDeck() { shown = ordered(R.filter(matches)).map(r => r.id); deckIdx = 0; }
 function fmtScore(x) { return String(x).replace(".", ","); }
 function hLabel(x) { return x >= 5 ? "sehr gesund" : x >= 4 ? "ausgewogen" : "Genuss"; }
-function cardHTML(r) {
-  const serv = S.f.serv, pp = perPortionCents(r, serv), lc = lastCooked(r.id), da = lc ? daysAgo(lc) : null;
-  const pills = [`<span class="pill">${MEALS[r.m]}</span>`];
+function recentTxt(id) { const lc = lastCooked(id); if (!lc) return ""; const da = daysAgo(lc); if (da > 7) return ""; return da === 0 ? "heute gekocht" : da === 1 ? "gestern gekocht" : `vor ${da} Tagen gekocht`; }
+function deckCardHTML(r) {
+  const pp = perPortionCents(r, S.f.serv), rt = recentTxt(r.id);
+  const pills = [];
   if (r.vegan) pills.push(`<span class="pill veg">vegan</span>`); else if (r.veg) pills.push(`<span class="pill veg">vegetarisch</span>`);
-  if (r.pr) pills.push(`<span class="pill">proteinreich</span>`);
   pills.push(`<span class="pill ${r.h.score >= 5 ? "veg" : ""}">${hLabel(r.h.score)} ${fmtScore(r.h.score)}/6</span>`);
+  pills.push(`<span class="pill">${EFFORT[r.e]}</span>`);
+  if (r.pr) pills.push(`<span class="pill">proteinreich</span>`);
   if (r.cost < 2.5) pills.push(`<span class="pill cheap">günstig</span>`);
-  if (da !== null && da <= 7) pills.push(`<span class="pill recent">${da === 0 ? "heute gekocht" : da === 1 ? "gestern gekocht" : `vor ${da} Tagen gekocht`}</span>`);
-  return `<button class="card" data-act="open" data-id="${r.id}">
-    ${S.fav.includes(r.id) ? '<span class="star" aria-label="Favorit">♥</span>' : ""}
-    <div class="pills">${pills.join("")}</div>
-    <h3>${esc(r.n)}</h3>
-    <div class="meta"><span>${ICON.clock}<b>${r.tt} min</b>${r.r ? " +" : ""}</span><span>${ICON.hat}${EFFORT[r.e]}</span>
-    <span>${ICON.euro}<b>${eur(pp)}</b>/Port.</span><span>${ICON.flame}${NF0.format(r.kcal)} kcal · ${NF0.format(r.prot)} g Protein</span></div>
-  </button>`;
+  return `<div class="dcard" role="button" tabindex="0" data-act="open" data-id="${r.id}" aria-label="${esc(r.n)} – Details öffnen">
+    <div class="dimg">${DISH.svg(r)}
+      <div class="dtags"><span class="pill">${MEALS[r.m]}</span>${rt ? `<span class="pill">${rt}</span>` : ""}</div>
+      ${S.fav.includes(r.id) ? '<span class="dfav" aria-label="Favorit">♥</span>' : ""}</div>
+    <div class="dbody">
+      <h3>${esc(r.n)}</h3>
+      <div class="kpis">
+        <div><b>${r.tt} min</b><span>Zeit${r.r ? " +" : ""}</span></div>
+        <div><b>${eur(pp)}</b><span>pro Portion</span></div>
+        <div><b>${NF0.format(r.kcal)}</b><span>kcal</span></div>
+        <div><b>${NF0.format(r.prot)} g</b><span>Protein</span></div>
+      </div>
+      <div class="pills">${pills.join("")}</div>
+    </div></div>`;
 }
+// kompakte Karte (Favoriten)
+function cardHTML(r) {
+  const pp = perPortionCents(r, S.f.serv), rt = recentTxt(r.id);
+  return `<button class="fcard" data-act="open" data-id="${r.id}">
+    <span class="fthumb">${DISH.svg(r)}</span>
+    <span class="ftxt"><b>${esc(r.n)}</b><span>${r.tt} min · ${eur(pp)}/Port. · ${NF0.format(r.kcal)} kcal</span>
+    <span>${hLabel(r.h.score)} ${fmtScore(r.h.score)}/6${rt ? " · " + rt : ""}</span></span><span class="muted">›</span></button>`;
+}
+function deckStep() { const d = $("#deck"), c = d && d.querySelector(".dcard"); return c ? c.offsetWidth + 12 : 1; }
+function updateDeckPos() {
+  const d = $("#deck"); if (!d) return;
+  deckIdx = Math.max(0, Math.min(shown.length - 1, Math.round(d.scrollLeft / deckStep())));
+  $("#deckPos").textContent = `${deckIdx + 1} / ${shown.length}`;
+  $("#deckProg").style.width = `${(deckIdx + 1) / shown.length * 100}%`;
+  $("#deckPrev").disabled = deckIdx === 0; $("#deckNext").disabled = deckIdx >= shown.length - 1;
+}
+function deckGo(i) { const d = $("#deck"); if (d) d.scrollTo({ left: Math.max(0, Math.min(shown.length - 1, i)) * deckStep(), behavior: "smooth" }); }
 function renderResults(scroll) {
   const box = $("#results");
+  shown = shown.filter(id => matches(RBYID[id]));
   if (!shown.length) {
-    box.innerHTML = `<div class="panel empty"><b>Keine passenden Gerichte</b>Lockere Budget, Zeit, Aufwand oder Ausstattung – oder entferne einen Ausschluss.</div>`;
+    box.innerHTML = `<div class="panel empty"><b>Keine passenden Gerichte</b>Lockere Budget, Zeit, Aufwand, Gesundheit oder Ausstattung – oder entferne einen Ausschluss.</div>`;
   } else {
-    const total = R.filter(matches).length;
-    box.innerHTML = `<div class="reshead"><span class="muted small">${shown.length} von ${total} passenden · für ${S.f.serv} ${S.f.serv === 1 ? "Portion" : "Portionen"}</span>
-      ${total > 3 ? '<button class="btn ghost" data-act="reroll">↻ Neu würfeln</button>' : ""}</div>
-      <div class="cards">${shown.map(id => cardHTML(RBYID[id])).join("")}</div>`;
+    box.innerHTML = `<div class="reshead"><span class="small muted"><b id="deckPos" style="color:var(--text)"></b> passende · für ${S.f.serv} ${S.f.serv === 1 ? "Portion" : "Portionen"}</span>
+      ${shown.length > 1 ? '<button class="btn ghost" data-act="reroll">↻ Neu mischen</button>' : ""}</div>
+      <div class="deck" id="deck">${shown.map(id => deckCardHTML(RBYID[id])).join("")}</div>
+      <div class="deckctl ${shown.length > 1 ? "" : "hidden"}"><button id="deckPrev" data-act="deckPrev" aria-label="Vorheriges Gericht">‹</button>
+        <div class="prog"><i id="deckProg"></i></div><button id="deckNext" data-act="deckNext" aria-label="Nächstes Gericht">›</button></div>
+      <p class="muted small" style="text-align:center;margin:6px 0 0">Wischen zum Blättern · Tippen für Details</p>`;
+    const d = $("#deck");
+    d.addEventListener("scroll", () => requestAnimationFrame(updateDeckPos), { passive: true });
+    d.scrollLeft = deckIdx * deckStep();
+    updateDeckPos();
   }
   if (scroll) box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -523,6 +852,7 @@ function renderSheet() {
   $("#sheet").innerHTML = `
     <div class="sheet-top"><button class="iconbtn" data-act="close" aria-label="Schließen">✕</button>
       <button class="iconbtn" data-act="fav" aria-pressed="${fav}" aria-label="Favorit">${fav ? "♥" : "♡"}</button></div>
+    <div class="hero">${DISH.svg(r)}</div>
     <div class="pills" style="margin-top:4px"><span class="pill">${MEALS[r.m]}</span><span class="pill ${r.veg ? "veg" : ""}">${diet}</span>${r.pr ? '<span class="pill">proteinreich</span>' : ""}</div>
     <h2 id="sheetTitle" style="margin-top:8px">${esc(r.n)}</h2>
     <div class="stats">
@@ -668,8 +998,10 @@ document.addEventListener("click", e => {
       filterChanged(); break;
     case "addExcl": addExcl(); break;
     case "rmExcl": S.excl.splice(+d.i, 1); filterChanged(); break;
-    case "suggest": queue = []; shown = []; next3(); renderResults(true); break;
-    case "reroll": next3(); renderResults(false); break;
+    case "suggest": buildDeck(); renderResults(true); break;
+    case "reroll": buildDeck(); renderResults(false); break;
+    case "deckPrev": deckGo(deckIdx - 1); break;
+    case "deckNext": deckGo(deckIdx + 1); break;
     case "open": openRecipe(d.id); break;
     case "close": closeRecipe(); break;
     case "fav": {
@@ -716,6 +1048,7 @@ document.addEventListener("keydown", e => {
   if (e.target.id === "exclInput") { e.preventDefault(); addExcl(); setTimeout(() => $("#exclInput") && $("#exclInput").focus(), 0); }
   if (e.target.id === "customItem") { e.preventDefault(); addCustom(); }
 });
+document.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("dcard")) { e.preventDefault(); openRecipe(e.target.dataset.id); } });
 document.addEventListener("keyup", e => { if (e.key === "Escape" && openId) closeRecipe(); });
 
 /* ---------- Start ---------- */
