@@ -11,8 +11,17 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="format-detection" content="telephone=no">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f2f2f7" id="themeColor">
+<script>
+/* Darstellung: "auto" folgt dem iPhone, sonst fest hell/dunkel */
+(function(){var t="auto";try{t=(JSON.parse(localStorage.getItem("wkc.v1"))||{}).theme||"auto"}catch(e){}
+var mq=window.matchMedia("(prefers-color-scheme: dark)");
+function apply(){var dark=t==="dark"||(t==="auto"&&mq.matches);var r=document.documentElement;r.classList.toggle("dark",dark);
+r.style.colorScheme=dark?"dark":"light";var m=document.getElementById("themeColor");if(m)m.content=dark?"#000000":"#f2f2f7";}
+window.__setTheme=function(v){t=v;apply()};apply();
+if(mq.addEventListener)mq.addEventListener("change",apply);else if(mq.addListener)mq.addListener(apply);
+document.addEventListener("DOMContentLoaded",apply);})();
+</script>
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="manifest" href="manifest.json">
@@ -44,9 +53,10 @@
   --navh:44px;
   --tabh:62px;
   --ease:cubic-bezier(.32,.72,0,1); /* iOS-Sheet-Kurve */
-  color-scheme:light dark;
+  color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root{
+html.dark{color-scheme:dark}
+html.dark{
   --bg:#000000; --cell:#1c1c1e; --cell2:#2c2c2e;
   --label:#ffffff; --label2:rgba(235,235,245,.6); --label3:rgba(235,235,245,.3);
   --sep:rgba(84,84,88,.6);
@@ -57,9 +67,9 @@
   --seg-thumb:#636366; --seg-shadow:0 3px 8px rgba(0,0,0,.3);
   --glass:rgba(44,44,48,.58); --glass-edge:rgba(255,255,255,.14); --glass-shadow:0 8px 32px rgba(0,0,0,.45);
   --card-shadow:none;
-}}
+}
 @media (prefers-contrast:more){:root{--label2:rgba(60,60,67,.85);--sep:rgba(60,60,67,.6);--glass:rgba(255,255,255,.95)}}
-@media (prefers-contrast:more) and (prefers-color-scheme:dark){:root{--label2:rgba(235,235,245,.85);--glass:rgba(28,28,30,.97)}}
+@media (prefers-contrast:more){html.dark{--label2:rgba(235,235,245,.85);--glass:rgba(28,28,30,.97)}}
 
 /* ===== Typografie: iOS-Textstile, skaliert mit Dynamic Type (Safari) ===== */
 html{font-size:17px;-webkit-text-size-adjust:100%}
@@ -215,10 +225,8 @@ button.cell:active,.cell.tap:active{background:var(--cell2)}
 .dots i.on{background:var(--label);transform:scale(1.1)}
 .hint{text-align:center;margin-top:8px}
 
-@media (prefers-color-scheme:dark){
-  .bg1.mf{stop-color:#4a3622}.bg2.mf{stop-color:#2e2217}.bg1.ms{stop-color:#33402a}.bg2.ms{stop-color:#1f2819}
-  .bg1.mm{stop-color:#4a3024}.bg2.mm{stop-color:#2e1d16}.bg1.ma{stop-color:#30334a}.bg2.ma{stop-color:#1d1f2e}
-}
+html.dark .bg1.mf{stop-color:#4a3622}html.dark .bg2.mf{stop-color:#2e2217}html.dark .bg1.ms{stop-color:#33402a}html.dark .bg2.ms{stop-color:#1f2819}
+html.dark .bg1.mm{stop-color:#4a3024}html.dark .bg2.mm{stop-color:#2e1d16}html.dark .bg1.ma{stop-color:#30334a}html.dark .bg2.ma{stop-color:#1d1f2e}
 /* Leerer Zustand (ContentUnavailable) */
 .empty{text-align:center;padding:44px 24px;color:var(--label2)}
 .empty svg.i{width:44px;height:44px;stroke-width:1.5;color:var(--label3);margin-bottom:10px}
@@ -273,7 +281,7 @@ button.cell:active,.cell.tap:active{background:var(--cell2)}
 .hgrid .c4{width:2.6rem;text-align:right;font-weight:700}
 .hgrid .hd{min-height:36px;font-size:.706rem;font-weight:600;color:var(--label2);text-transform:uppercase;letter-spacing:.03em}
 .p1{color:var(--green)} .p05{color:#c98a00} .p0{color:var(--red)}
-@media (prefers-color-scheme:dark){.p05{color:#ffd60a}}
+html.dark .p05{color:#ffd60a}
 ol.steps{list-style:none;margin:0;padding:0;counter-reset:s}
 ol.steps li{counter-increment:s;position:relative;padding:14px 16px 14px 56px;background:var(--cell)}
 ol.steps li + li::before{content:"";position:absolute;top:0;right:0;left:56px;border-top:.5px solid var(--sep)}
@@ -323,6 +331,7 @@ ol.steps li::after{content:counter(s);position:absolute;left:16px;top:13px;width
 <body>
 
 <header class="navbar" id="navbar">
+  <button class="gbtn round glass" data-act="openSettings" aria-label="Einstellungen" id="setBtn"></button>
   <span class="ntitle" id="ntitle">Was koche ich?</span>
   <div class="nbtns" id="nbtns"></div>
 </header>
@@ -373,6 +382,13 @@ ol.steps li::after{content:counter(s);position:absolute;left:16px;top:13px;width
     <button class="btn plain" data-act="closeFilters" style="font-weight:700">Fertig</button></div>
   <div class="scroll" id="fsBody"></div>
   <div class="sfoot glass"><button class="btn primary" data-act="closeFilters" id="fsCount"></button></div>
+</div>
+
+<div class="sheet fsheet" id="ssheet" role="dialog" aria-modal="true" aria-labelledby="ssTitle" style="top:auto;height:auto;max-height:calc(100% - var(--st) - 10px)">
+  <span class="grabber"></span>
+  <div class="shead"><span style="width:44px"></span><h2 id="ssTitle">Einstellungen</h2>
+    <button class="btn plain" data-act="closeSettings" style="font-weight:700">Fertig</button></div>
+  <div class="scroll" id="ssBody" style="padding-bottom:calc(var(--sb) + 24px)"></div>
 </div>
 
 <div class="sheet rsheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
@@ -737,7 +753,7 @@ const RBYID = Object.fromEntries(R.map(r => [r.id, r]));
 const KEY = "wkc.v1";
 function defaultMeal() { const h = new Date().getHours(); return h < 10 ? "f" : h < 14 ? "m" : h < 17 ? "s" : "a"; }
 const DEF_F = { budget: "egal", time: "egal", serv: 2, diet: "alles", health: "egal", effort: 3, eq: ALL_EQ.slice(), kalt: false };
-const DEF = { f: Object.assign({ meal: defaultMeal() }, DEF_F), excl: [], fav: [], hist: [], list: [], pantry: ["salz", "pfeffer"], hintClosed: false };
+const DEF = { f: Object.assign({ meal: defaultMeal() }, DEF_F), excl: [], fav: [], hist: [], list: [], pantry: ["salz", "pfeffer"], hintClosed: false, theme: "auto" };
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { S = {}; }
 S = Object.assign(structuredClone(DEF), S);
@@ -781,6 +797,10 @@ function daysAgo(ts) { const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d1 
 function recentSet() { const lim = Date.now() - 7 * DAY, s = new Set(); for (const h of S.hist) if (h.ts >= lim) s.add(h.id); return s; }
 const I = (d, cls = "i") => `<svg class="${cls}" viewBox="0 0 24 24">${d}</svg>`;
 const ICON = {
+  gear: I('<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2L5.5 5.5"/><circle cx="12" cy="12" r="6.6"/>'),
+  sun: I('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M21.5 12h-2M4.5 12h-2M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4M18.7 18.7l-1.4-1.4M6.7 6.7L5.3 5.3"/>'),
+  moon: I('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/>'),
+  auto: I('<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17A8.5 8.5 0 0 0 12 3.5Z" style="fill:currentColor"/>'),
   filter: I('<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>'),
   shuffle: I('<path d="M3 7h3.5c2 0 3.3 1 4.5 2.8l2 3.4c1.2 1.8 2.5 2.8 4.5 2.8H21M3 17h3.5c1.6 0 2.7-.6 3.7-1.8M14 8.8c1-1.2 2.1-1.8 3.5-1.8H21M18 4l3 3-3 3M18 14l3 3-3 3"/>'),
   share: I('<path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>'),
@@ -1025,6 +1045,16 @@ function renderSheet() {
     </div>`;
 }
 
+/* ---------- Einstellungen (Darstellung) ---------- */
+const THEMES = [["auto", "Automatisch", "auto"], ["light", "Hell", "sun"], ["dark", "Dunkel", "moon"]];
+function renderSettings() {
+  $("#ssBody").innerHTML = `<div class="group" style="margin-top:10px"><div class="ghead"><span>Darstellung</span></div>
+    <div class="cells">${THEMES.map(([v, l, ic]) => `<button class="cell" role="radio" aria-checked="${S.theme === v}" data-act="setTheme" data-v="${v}">
+      <span style="color:var(--tint);display:grid">${ICON[ic]}</span><span class="grow">${l}</span><span class="check">${S.theme === v ? "✓" : ""}</span></button>`).join("")}</div>
+    <p class="gfoot">„Automatisch“ folgt der Einstellung deines iPhones (Einstellungen › Anzeige & Helligkeit).</p></div>`;
+}
+function openSettings() { renderSettings(); openSheet($("#ssheet")); }
+
 /* ---------- Filter-Sheet ---------- */
 function openFilters() { renderFilters(); openSheet($("#fsheet")); }
 function closeFilters() { closeSheet($("#fsheet")); }
@@ -1151,6 +1181,10 @@ document.addEventListener("click", e => {
     case "addExcl": addExcl(); break;
     case "rmExcl": S.excl.splice(+d.i, 1); filterChanged(); break;
     case "openFilters": openFilters(); break;
+    case "openSettings": openSettings(); break;
+    case "closeSettings": closeSheet($("#ssheet")); break;
+    case "setTheme": S.theme = d.v; save(); window.__setTheme(d.v); renderSettings();
+      toast(d.v === "auto" ? "Darstellung folgt dem iPhone" : d.v === "light" ? "Helle Darstellung" : "Dunkle Darstellung"); break;
     case "closeFilters": closeFilters(); break;
     case "resetFilters": S.f = Object.assign({ meal: S.f.meal }, structuredClone(DEF_F)); S.excl = []; filterChanged(); toast("Filter zurückgesetzt"); break;
     case "closeTop": { const top = stack[stack.length - 1]; if (top === $("#sheet")) closeRecipe(); else if (top) closeSheet(top); break; }
@@ -1212,6 +1246,8 @@ document.addEventListener("keydown", e => {
   enableSwipeDown($("#sheet"), closeRecipe);
   $("#rsBody").addEventListener("scroll", e => $("#sedge").classList.toggle("on", e.target.scrollTop > 180), { passive: true });
   enableSwipeDown($("#fsheet"), closeFilters);
+  enableSwipeDown($("#ssheet"), () => closeSheet($("#ssheet")));
+  $("#setBtn").innerHTML = ICON.gear;
   renderMealSeg(); renderFilters(); renderSummary(); buildDeck(); renderResults(); updateBadge(); onScroll();
   if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
 })();
