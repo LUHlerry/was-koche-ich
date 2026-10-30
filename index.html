@@ -189,20 +189,18 @@ button.cell:active,.cell.tap:active{background:var(--cell2)}
 .btn.sm{min-height:36px;font-size:.882rem;padding:0 14px}
 
 /* Filterübersicht (aktive Filter) */
-.fsum{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:10px calc(-1 * var(--m)) 0;padding:2px var(--m) 4px}
-.fsum::-webkit-scrollbar{display:none}
 .fchip{flex:none;height:32px;padding:0 12px;border-radius:16px;background:var(--cell);font-size:.882rem;font-weight:500;display:inline-flex;align-items:center;gap:6px;box-shadow:var(--card-shadow)}
 .fchip.on{background:var(--tint-soft);color:var(--orange-txt)}
 
 /* ===== Swipe-Deck ===== */
-.reshead{display:flex;align-items:center;justify-content:space-between;margin:18px 4px 10px;min-height:44px}
+.reshead{display:flex;align-items:center;justify-content:space-between;margin:12px 4px 10px;min-height:44px}
 .deck{display:flex;align-items:flex-start;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;
-  margin:0 calc(-1 * var(--m) - var(--sr)) 0 calc(-1 * var(--m) - var(--sl));padding:0 calc(var(--m) + var(--sr)) 18px calc(var(--m) + var(--sl));scroll-padding-left:calc(var(--m) + var(--sl))}
+  margin:0 calc(-1 * var(--m) - var(--sr)) 0 calc(-1 * var(--m) - var(--sl));padding:0 calc(var(--m) + var(--sr)) 10px calc(var(--m) + var(--sl));scroll-padding-left:calc(var(--m) + var(--sl))}
 .deck::-webkit-scrollbar{display:none}
 .dcard{flex:0 0 calc(100% - 28px);max-width:440px;scroll-snap-align:start;scroll-snap-stop:always;background:var(--cell);border-radius:28px;box-shadow:var(--card-shadow);overflow:hidden;cursor:pointer;-webkit-user-select:none;user-select:none;transition:transform .2s var(--ease)}
 .dcard:only-child{flex-basis:100%}
 .dcard:active{transform:scale(.985)}
-.dimg{position:relative;aspect-ratio:400/260}
+.dimg{position:relative;aspect-ratio:400/240}
 .dimg svg,.hero svg,.thumb svg{display:block;width:100%;height:100%}
 .dtags{position:absolute;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap;right:56px}
 .gtag{height:26px;padding:0 10px;border-radius:13px;display:inline-flex;align-items:center;font-size:.706rem;font-weight:600;color:var(--label)}
@@ -323,9 +321,9 @@ ol.steps li::after{content:counter(s);position:absolute;left:16px;top:13px;width
 .sheet-open .tabbar{transform:translateY(140%);transition:transform .35s var(--ease)}
 
 /* Toast (HUD) */
-.toast{position:fixed;z-index:90;left:50%;top:calc(var(--st) + 8px);transform:translate(-50%,-140%);transition:transform .4s var(--ease);
+.toast{position:fixed;z-index:90;left:50%;top:calc(var(--st) + 8px);transform:translate(-50%,-16px);opacity:0;visibility:hidden;transition:transform .4s var(--ease),opacity .25s,visibility 0s .4s;
   padding:12px 18px;border-radius:24px;font-size:.882rem;font-weight:600;max-width:calc(100% - 32px);text-align:center;pointer-events:none;display:flex;gap:8px;align-items:center}
-.toast.show{transform:translate(-50%,0)}
+.toast.show{transform:translate(-50%,0);opacity:1;visibility:visible;transition:transform .4s var(--ease),opacity .25s,visibility 0s}
 </style>
 </head>
 <body>
@@ -343,7 +341,6 @@ ol.steps li::after{content:counter(s);position:absolute;left:16px;top:13px;width
     <button class="gbtn round" data-act="hideHint" aria-label="Hinweis schließen"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="seg lg mealseg" role="radiogroup" aria-label="Mahlzeit" id="mealSeg"></div>
-  <div class="fsum" id="fsum"></div>
   <div id="results"></div>
 </section>
 
@@ -891,8 +888,6 @@ function activeFilters() {
 }
 function renderSummary() {
   const a = activeFilters();
-  $("#fsum").innerHTML = `<button class="fchip" data-act="openFilters">${ICON.filter.replace('class="i"', 'class="i" style="width:16px;height:16px"')}Filter</button>` +
-    a.map(([t, on]) => `<button class="fchip ${on ? "on" : ""}" data-act="openFilters">${esc(t)}</button>`).join("");
   const n = a.filter(x => x[1]).length;
   $("#nbtns").innerHTML = curTab === "vorschlag" ? `<button class="gbtn round glass" data-act="openFilters" aria-label="Filter${n ? ` (${n} aktiv)` : ""}">${ICON.filter}${n ? `<span class="badge">${n}</span>` : ""}</button>`
     : curTab === "einkauf" && S.list.some(x => !x.done) ? `<button class="gbtn round glass" data-act="share" aria-label="Einkaufsliste teilen">${ICON.share}</button>` : "";
@@ -952,7 +947,7 @@ function renderResults() {
       ${shown.length > 1 ? `<button class="btn sm" data-act="reroll">${ICON.shuffle.replace('class="i"', 'class="i" style="width:17px;height:17px"')}Mischen</button>` : ""}</div>
     <div class="deck" id="deck">${shown.map(id => deckCardHTML(RBYID[id])).join("")}</div>
     ${shown.length > 1 ? `<div class="pager" aria-hidden="true"><div class="dots" id="dots">${shown.length <= 24 ? shown.map(() => "<i></i>").join("") : ""}</div></div>
-    <p class="hint cap l2">Wischen zum Blättern · Tippen für Details</p>` : ""}`;
+` : ""}`;
   const d = $("#deck");
   d.addEventListener("scroll", () => requestAnimationFrame(updateDeckPos), { passive: true });
   d.scrollLeft = deckIdx * deckStep();
@@ -1184,7 +1179,7 @@ document.addEventListener("click", e => {
     case "openSettings": openSettings(); break;
     case "closeSettings": closeSheet($("#ssheet")); break;
     case "setTheme": S.theme = d.v; save(); window.__setTheme(d.v); renderSettings();
-      toast(d.v === "auto" ? "Darstellung folgt dem iPhone" : d.v === "light" ? "Helle Darstellung" : "Dunkle Darstellung"); break;
+      break;
     case "closeFilters": closeFilters(); break;
     case "resetFilters": S.f = Object.assign({ meal: S.f.meal }, structuredClone(DEF_F)); S.excl = []; filterChanged(); toast("Filter zurückgesetzt"); break;
     case "closeTop": { const top = stack[stack.length - 1]; if (top === $("#sheet")) closeRecipe(); else if (top) closeSheet(top); break; }
